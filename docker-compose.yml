@@ -1,16 +1,6 @@
-version: "3.9"
-
-# ─────────────────────────────────────────────────────────────────────────────
-#  Yoga Master — Docker Compose
-#
-#  Profiles:
-#    prod  →  docker compose --profile prod up --build
-#    dev   →  docker compose --profile dev  up
-# ─────────────────────────────────────────────────────────────────────────────
-
 services:
 
-  # ── Production: multi-stage build → Nginx static server ───────────────────
+  # ── Production ─────────────────────────────
   yoga-master:
     profiles: ["prod"]
     build:
@@ -19,7 +9,8 @@ services:
       target: runner
     container_name: yoga-master-prod
     image: yoga-master:latest
-    network_mode: "host"
+    ports:
+      - "3002:80"
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:80"]
@@ -30,7 +21,7 @@ services:
     labels:
       - "com.yoga-master.environment=production"
 
-  # ── Development: Vite HMR dev server with live-reload ─────────────────────
+  # ── Development ────────────────────────────
   yoga-master-dev:
     profiles: ["dev"]
     build:
@@ -38,15 +29,14 @@ services:
       dockerfile: Dockerfile.dev
     container_name: yoga-master-dev
     image: yoga-master:dev
-    network_mode: "host"
+    ports:
+      - "3001:5173"   # Vite default port
     volumes:
-      # Mount source for hot-module replacement
       - .:/app
-      # Prevent host node_modules from overriding container's
       - /app/node_modules
     environment:
       - NODE_ENV=development
-      - CHOKIDAR_USEPOLLING=true   # needed on some Windows/macOS setups
+      - CHOKIDAR_USEPOLLING=true
     restart: unless-stopped
     labels:
       - "com.yoga-master.environment=development"
